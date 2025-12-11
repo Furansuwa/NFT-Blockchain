@@ -7,7 +7,7 @@ import { sepolia } from "thirdweb/chains";
 import { mintTo } from "thirdweb/extensions/erc721";
 import { client } from "../utils/client";
 
-// ✅ TU CONTRATO NUEVO (Actualizado)
+// ✅ Tu contrato (Ya configurado)
 const CONTRACT_ADDRESS = "0x5e417b92B94d72FF1893E53026884f788f7AE052"; 
 
 const contract = getContract({
@@ -23,25 +23,24 @@ export default function AIMinter() {
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
   
-  // Paso 1: Generar la imagen y convertirla a un archivo real
+  // Paso 1: Generar imagen con IA y convertirla a archivo
   const handleGenerate = async () => {
     if (!prompt) return;
     setIsGenerating(true);
-    setGeneratedFile(null); // Limpiamos el anterior para evitar errores
+    setGeneratedFile(null); 
     
     try {
-        // Usamos Pollinations para la IA
         const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
-        setPreviewUrl(url); // Mostramos la preview visualmente
+        setPreviewUrl(url); 
 
-        // Descargamos la imagen para convertirla en un archivo que la Blockchain entienda
+        // Descarga la imagen para subirla a la Blockchain
         const response = await fetch(url);
         const blob = await response.blob();
         const file = new File([blob], "nft-image.jpg", { type: "image/jpeg" });
-        setGeneratedFile(file); // ¡Listo! Archivo preparado
+        setGeneratedFile(file); 
     } catch (err) {
-        console.error("Error generando imagen:", err);
-        alert("Hubo un error al conectar con la IA. Intenta de nuevo.");
+        console.error("Error:", err);
+        alert("Error al generar la imagen. Intenta de nuevo.");
     }
     setIsGenerating(false);
   };
@@ -52,7 +51,7 @@ export default function AIMinter() {
         ⚡ Generador Neural
       </h2>
       
-      {/* INPUT DEL PROMPT */}
+      {/* INPUT */}
       <div className="mb-6 group">
         <label className="block text-cyan-300 text-sm mb-2 font-mono tracking-widest">
           PROMPT DE COMANDO
@@ -62,51 +61,44 @@ export default function AIMinter() {
             type="text" 
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Ej: Cyberpunk samurai cat in neon city..."
-            className="w-full bg-black/50 border border-purple-500/30 rounded-lg py-3 px-4 text-white focus:outline-none focus:border-cyan-400 focus:shadow-[0_0_15px_rgba(0,243,255,0.3)] transition-all"
+            placeholder="Ej: Cyberpunk samurai cat..."
+            className="w-full bg-black/50 border border-purple-500/30 rounded-lg py-3 px-4 text-white focus:border-cyan-400 transition-all"
           />
         </div>
       </div>
 
-      {/* BOTÓN 1: GENERAR IMAGEN */}
+      {/* BOTÓN 1: GENERAR */}
       <button
         onClick={handleGenerate}
         disabled={isGenerating || !prompt}
         className={`w-full py-3 rounded-lg font-bold tracking-widest mb-6 transition-all ${
-          isGenerating ? "bg-gray-700 cursor-not-allowed" : "bg-gradient-to-r from-blue-600 to-purple-600 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(188,19,254,0.5)]"
+          isGenerating ? "bg-gray-700 cursor-not-allowed" : "bg-gradient-to-r from-blue-600 to-purple-600 hover:scale-[1.02]"
         }`}
       >
-        {isGenerating ? "PROCESANDO DATOS..." : "1. MATERIALIZAR IMAGEN"}
+        {isGenerating ? "PROCESANDO..." : "1. MATERIALIZAR IMAGEN"}
       </button>
 
-      {/* ZONA DE PREVISUALIZACIÓN */}
+      {/* PREVIEW */}
       {previewUrl && (
-        <div className="mb-6 relative rounded-xl overflow-hidden border-2 border-cyan-500/30 group">
+        <div className="mb-6 relative rounded-xl overflow-hidden border-2 border-cyan-500/30">
             <img 
               src={previewUrl} 
               alt="Preview" 
-              className={`w-full object-cover transition-opacity duration-700 ${isGenerating ? "opacity-50 blur-sm" : "opacity-100"}`} 
+              className={`w-full object-cover ${isGenerating ? "opacity-50 blur-sm" : "opacity-100"}`} 
             />
-            {isGenerating && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-cyan-400 font-mono animate-pulse">SINTETIZANDO PIXELES...</span>
-                </div>
-            )}
-            
-            {/* Estado del archivo (Debug visual) */}
-            <div className="absolute bottom-0 left-0 right-0 bg-black/80 p-2 text-center text-xs font-mono">
-                {generatedFile ? <span className="text-green-400">● IMAGEN LISTA PARA BLOCKCHAIN</span> : <span className="text-yellow-400">● ESPERANDO BINARIOS...</span>}
+             {/* Indicador de estado */}
+             <div className="absolute bottom-0 left-0 right-0 bg-black/80 p-2 text-center text-xs font-mono">
+                {generatedFile ? <span className="text-green-400">● LISTO PARA BLOCKCHAIN</span> : <span className="text-yellow-400">● CARGANDO BINARIOS...</span>}
             </div>
         </div>
       )}
 
-      {/* BOTÓN 2: GUARDAR EN BLOCKCHAIN (MINT) */}
-      {/* Solo aparece si la imagen ya se generó correctamente */}
+      {/* BOTÓN 2: MINT (Solo aparece si todo está listo) */}
       {generatedFile && (
         <div className="animate-fade-in-up">
             <TransactionButton
               transaction={() => {
-                if (!account) throw new Error("⚠️ Conecta tu Wallet primero");
+                if (!account) throw new Error("⚠️ Conecta tu Wallet");
                 
                 return mintTo({
                   contract,
@@ -119,13 +111,14 @@ export default function AIMinter() {
                 });
               }}
               onTransactionConfirmed={() => {
-                alert("🚀 ¡NFT Acuñado! Espera unos segundos y recarga la galería.");
+                alert("🚀 ¡NFT Creado! Actualiza la galería para verlo.");
                 setPrompt("");
                 setGeneratedFile(null);
                 setPreviewUrl("");
               }}
               onError={(error) => {
                   console.error("Error Minting:", error);
+                  // Si falla aquí, es 100% permisos o falta de saldo
                   alert(`Error: ${error.message}`); 
               }}
               style={{
@@ -137,7 +130,7 @@ export default function AIMinter() {
                 borderRadius: "8px",
               }}
             >
-              2. INSCRIBIR EN BLOCKCHAIN (SEPOLIA)
+              2. INSCRIBIR EN BLOCKCHAIN
             </TransactionButton>
         </div>
       )}
