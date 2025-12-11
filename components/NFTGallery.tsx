@@ -7,7 +7,7 @@ import { getNFTs } from "thirdweb/extensions/erc721";
 import { MediaRenderer } from "thirdweb/react";
 import { client } from "../utils/client";
 
-const CONTRACT_ADDRESS = "0x5655DC2A44A6Ad652cea6a250e454a6Ce023660c"; 
+const CONTRACT_ADDRESS = "0x5e417b92B94d72FF1893E53026884f788f7AE052"; 
 
 const contract = getContract({
   client,
@@ -16,66 +16,57 @@ const contract = getContract({
 });
 
 export default function NFTGallery() {
-  // Hook que lee todos los NFTs del contrato automáticamente
-  const { data: nfts, isLoading } = useReadContract(getNFTs, {
+  const { data: nfts, isLoading, refetch } = useReadContract(getNFTs, {
     contract,
   });
 
-  if (isLoading) {
-    return <div style={{ textAlign: "center", padding: "20px" }}>Cargando galería... ⏳</div>;
-  }
-
-  if (!nfts || nfts.length === 0) {
-    return <div style={{ textAlign: "center", padding: "20px" }}>No hay NFTs creados aún. ¡Usa el generador arriba! 👆</div>;
-  }
-
   return (
-    <div style={{ 
-      display: "grid", 
-      gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", 
-      gap: "20px",
-      marginTop: "20px"
-    }}>
-      {nfts.map((nft) => (
-        <div 
-          key={nft.id} 
-          style={{ 
-            border: "1px solid #333", 
-            borderRadius: "10px", 
-            padding: "10px",
-            backgroundColor: "#111", // Fondo oscuro para resaltar la imagen
-            color: "white"
-          }}
-        >
-          {/* MediaRenderer detecta si es IPFS o URL normal (como Pollinations) y la muestra */}
-          <MediaRenderer 
-            client={client}
-            src={nft.metadata.image} 
-            style={{ 
-              width: "100%", 
-              aspectRatio: "1/1", // Mantiene la imagen cuadrada
-              objectFit: "cover", 
-              borderRadius: "8px",
-              marginBottom: "10px"
-            }}
-          />
-          
-<div style={{ 
-            fontSize: "0.9rem", 
-            fontWeight: "bold",
-            // Estas 3 líneas hacen el efecto "truncate" (cortar texto con ...)
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis"
-          }}>
-            {nft.metadata.name}
-          </div>
-          
-          <div style={{ fontSize: "0.8rem", color: "#888" }}>
-            ID: #{nft.id.toString()}
-          </div>
+    <div className="w-full max-w-5xl mx-auto">
+        <div className="flex justify-between items-end mb-6 border-b border-gray-700 pb-2">
+            <h3 className="text-xl text-cyan-400 font-mono">/// BASE DE DATOS DE ACTIVOS</h3>
+            <button 
+                onClick={() => refetch()} 
+                className="text-xs text-purple-400 hover:text-white border border-purple-500 px-3 py-1 rounded hover:bg-purple-600 transition-colors"
+            >
+                ↻ ACTUALIZAR RED
+            </button>
         </div>
-      ))}
+
+      {isLoading ? (
+        <div className="text-center py-20 animate-pulse text-cyan-600">ESCANEANDO BLOCKCHAIN...</div>
+      ) : !nfts || nfts.length === 0 ? (
+        <div className="text-center py-10 text-gray-500">NO SE ENCONTRARON ARTEFACTOS.</div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {nfts.map((nft) => (
+            <div 
+              key={nft.id} 
+              className="glass-card rounded-xl overflow-hidden hover:scale-105 transition-transform duration-300 group"
+            >
+              <div className="aspect-square w-full relative overflow-hidden">
+                  <MediaRenderer 
+                    client={client}
+                    src={nft.metadata.image} 
+                    className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
+                    style={{width: '100%', height: '100%'}}
+                  />
+                  {/* Overlay al pasar el mouse */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
+                      <span className="text-xs text-cyan-300 font-mono">SECURE ASSET</span>
+                  </div>
+              </div>
+              
+              <div className="p-4 bg-black/40">
+                <h4 className="text-white font-bold truncate text-sm mb-1">{nft.metadata.name}</h4>
+                <div className="flex justify-between items-center">
+                    <span className="text-xs text-purple-400 font-mono">ID: #{nft.id.toString()}</span>
+                    <span className="text-[10px] bg-cyan-900/50 text-cyan-300 px-2 py-0.5 rounded border border-cyan-800">ERC-721</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
